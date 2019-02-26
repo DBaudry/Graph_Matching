@@ -27,7 +27,7 @@ def get_compatibility_matrix(G1, G2, func):
     for i in range(n1):
         for j in range(n2):
             W[n2*i+j, n2*i+j] = func(A1[i, i], A2[j, j])
-    return W
+    return (W+W.T)/2
 
 
 def get_perturbed_graph(graph, noise_level):
