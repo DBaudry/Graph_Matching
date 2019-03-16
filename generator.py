@@ -2,6 +2,7 @@ import numpy as np
 from itertools import combinations
 from copy import copy
 
+
 def generate_random_graph(n, m):
     """
     :param n: number of vertices
@@ -11,10 +12,32 @@ def generate_random_graph(n, m):
     edge_set = list(combinations(np.arange(n), 2))
     edges_indices = np.random.choice(len(edge_set), replace=False, size=m)
     edges = [edge_set[i] for i in edges_indices]
-    A = np.diag(np.random.uniform(size=n))
+    A = np.zeros((n, n))
     for e in edges:
         A[e[0], e[1]] = np.random.uniform()
+    A = A+A.T
+    A += np.diag(np.random.uniform(size=n))
     return n, edges, A
+
+
+def get_perturbed_graph(graph, noise_level):
+    n, E, A = graph
+    indices = np.arange(n)
+    np.random.shuffle(indices)
+    Ep = []
+    Ap = np.zeros(A.shape)
+    for e in E:
+        new_e = (indices[e[0]], indices[e[1]])
+        Ep.append(new_e)
+        Ap[new_e[0], new_e[1]] = A[e[0], e[1]] + np.random.uniform(low=0, high=noise_level)
+    Ap = Ap + Ap.T
+    for i, x in enumerate(indices):
+        Ap[x, x] = A[i, i] + np.random.uniform(low=0, high=noise_level)
+    return n, Ep, Ap
+
+
+def exp_dist(x, y):
+    return np.exp(-np.sum(np.abs(x-y)**2))
 
 
 def get_compatibility_matrix(G1, G2, func):
@@ -27,22 +50,4 @@ def get_compatibility_matrix(G1, G2, func):
     for i in range(n1):
         for j in range(n2):
             W[n2*i+j, n2*i+j] = func(A1[i, i], A2[j, j])
-    return (W+W.T)/2
-
-
-def get_perturbed_graph(graph, noise_level):
-    n, E, A = graph
-    edge_set = list(combinations(np.arange(n), 2))
-    edges_indices = np.random.choice(len(edge_set), replace=False, size=len(E))
-    edges = [edge_set[i] for i in edges_indices]
-    Ap = np.zeros((n, n))
-    for i, e in enumerate(edges):
-        Ap[e[0], e[1]] = A[E[i][0], E[i][1]] + np.random.uniform(low=0, high=noise_level)
-    diag_A = copy(np.diag(A))
-    np.random.shuffle(np.diag(A))
-    Ap += np.diag(diag_A + np.random.uniform(low=0, high=noise_level, size=n))
-    return n, edges, Ap
-
-
-def exp_dist(x, y):
-    return np.exp(-np.sum(np.abs(x-y)**2))
+    return W
