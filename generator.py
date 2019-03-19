@@ -58,4 +58,32 @@ def get_compatibility_matrix(G1, G2, func):
     return W
 
 
+def get_1t1_constraints(n):
+    """
+    :param n: shape of the affinity matrix
+    :return:
+    """
+    n_tot = n**2
+    C0 = np.zeros((n, n_tot))
+    C1 = np.zeros((n, n_tot))
+    b = np.ones(2*n)
+    for i in range(n):
+        for k in range(n):
+            C0[i, n*i+k] = 1
+            C1[i, n*k+i] = 1
+    return C0, C1, b
+
+
+def get_Pc_SMAC(C, b):
+    k = C.shape[0]
+    Ik = np.zeros((k-1, k))
+    Ik[:, :-1] = np.eye(k-1)
+    for i in range(k):
+        C[i] = C[i] - b[i]/b[-1]*C[-1]
+    Ceq = np.dot(Ik, C)
+    inv_C = np.linalg.inv(np.dot(Ceq, Ceq.T))
+    all_C = np.dot(Ceq.T, np.dot(inv_C, Ceq))
+    return np.eye(C.shape[1])-all_C
+
+
 
