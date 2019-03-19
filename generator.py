@@ -86,4 +86,14 @@ def get_Pc_SMAC(C, b):
     return np.eye(C.shape[1])-all_C
 
 
-
+def random_permutation_matrix(n):
+    """
+    :param n: shape of the squared matrix
+    :return: nxn permutation matrix
+    """
+    r = np.arange(n)
+    np.random.shuffle(r)
+    m = np.zeros((n, n))
+    for i, x in enumerate(r):
+        m[i, x] = 1
+    return m.flatten()

@@ -22,19 +22,6 @@ def SM(W):
     return np.abs(lead_ev)
 
 
-def random_permutation_matrix(n):
-    """
-    :param n: shape of the squared matrix
-    :return: nxn permutation matrix
-    """
-    r = np.arange(n)
-    np.random.shuffle(r)
-    m = np.zeros((n, n))
-    for i, x in enumerate(r):
-        m[i, x] = 1
-    return m.flatten()
-
-
 def GA_matrix(W, n, x0, b0=0.5, bf=10., br=1.075,
               tol0=0.5, tol1=0.05, itermax0=30, itermax1=30, display_step=False):
     """
