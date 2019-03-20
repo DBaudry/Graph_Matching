@@ -3,10 +3,11 @@ from itertools import combinations
 from copy import copy
 
 
-def generate_random_graph(n, m):
+def generate_random_graph(n, m, draw_attribute=np.random.uniform):
     """
     :param n: number of vertices
     :param m: number of edges
+    :param draw_attribute: Distribution for the parameter
     :return: tuple (n, set of edges, attribute matrix A)
     """
     edge_set = list(combinations(np.arange(n), 2))
@@ -14,13 +15,13 @@ def generate_random_graph(n, m):
     edges = [edge_set[i] for i in edges_indices]
     A = np.zeros((n, n))
     for e in edges:
-        A[e[0], e[1]] = np.random.uniform()
+        A[e[0], e[1]] = draw_attribute()
     A = A+A.T
-    A += np.diag(np.random.uniform(size=n))
+    A += np.diag(draw_attribute(size=n))
     return n, edges, A
 
 
-def get_perturbed_graph(graph, noise_level):
+def get_perturbed_graph(graph, noise_level, draw_noise=np.random.uniform):
     n, E, A = graph
     indices = np.arange(n)
     np.random.shuffle(indices)
@@ -29,10 +30,10 @@ def get_perturbed_graph(graph, noise_level):
     for e in E:
         new_e = (indices[e[0]], indices[e[1]])
         Ep.append(new_e)
-        Ap[new_e[0], new_e[1]] = A[e[0], e[1]] + np.random.uniform(low=0, high=noise_level)
+        Ap[new_e[0], new_e[1]] = A[e[0], e[1]] + draw_noise(0, noise_level)
     Ap = Ap + Ap.T
     for i, x in enumerate(indices):
-        Ap[x, x] = A[i, i] + np.random.uniform(low=0, high=noise_level)
+        Ap[x, x] = A[i, i] + draw_noise(0, noise_level)
     return n, Ep, Ap, indices
 
 

@@ -4,6 +4,14 @@ from skimage.util import view_as_blocks
 
 
 def bistochastic_normalization(W, n1, n2, max_iter=100, tol=1e-4):
+    """
+    :param W: Compatibility matrix
+    :param n1: size of the first graph
+    :param n2: size of the second graph
+    :param max_iter: maximum number of iterations
+    :param tol: threshold used for convergence
+    :return: edge-bistochastic corresponding matrix
+    """
     blocks = view_as_blocks(W, (n1, n1))
     S = np.zeros((n1**2, n2**2))
     for j in range(n2**2):
