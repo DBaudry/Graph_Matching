@@ -3,7 +3,7 @@ from itertools import combinations
 from copy import copy
 
 
-def generate_random_graph(n, m, draw_attribute=np.random.uniform):
+def generate_random_graph(n, m, param_dist, draw_attribute=np.random.uniform):
     """
     :param n: number of vertices
     :param m: number of edges
@@ -15,13 +15,19 @@ def generate_random_graph(n, m, draw_attribute=np.random.uniform):
     edges = [edge_set[i] for i in edges_indices]
     A = np.zeros((n, n))
     for e in edges:
-        A[e[0], e[1]] = draw_attribute()
+        A[e[0], e[1]] = draw_attribute(*param_dist)
     A = A+A.T
-    A += np.diag(draw_attribute(size=n))
+    A += np.diag(draw_attribute(*param_dist, size=n))
     return n, edges, A
 
 
-def get_perturbed_graph(graph, noise_level, draw_noise=np.random.uniform):
+def get_perturbed_graph(graph, noise_param=(-1, 1), draw_noise=np.random.uniform):
+    """
+    :param graph: First graph G1
+    :param noise_param: Parameters of the distribution of the noise
+    :param draw_noise: noise distribution
+    :return: Perturbed permutation of the initial graph
+    """
     n, E, A = graph
     indices = np.arange(n)
     np.random.shuffle(indices)
@@ -30,10 +36,10 @@ def get_perturbed_graph(graph, noise_level, draw_noise=np.random.uniform):
     for e in E:
         new_e = (indices[e[0]], indices[e[1]])
         Ep.append(new_e)
-        Ap[new_e[0], new_e[1]] = A[e[0], e[1]] + draw_noise(0, noise_level)
+        Ap[new_e[0], new_e[1]] = A[e[0], e[1]] + draw_noise(*noise_param)
     Ap = Ap + Ap.T
     for i, x in enumerate(indices):
-        Ap[x, x] = A[i, i] + draw_noise(0, noise_level)
+        Ap[x, x] = A[i, i] + draw_noise(*noise_param)
     return n, Ep, Ap, indices
 
 
@@ -72,7 +78,7 @@ def get_1t1_constraints(n):
         for k in range(n):
             C0[i, n*i+k] = 1
             C1[i, n*k+i] = 1
-    return C0, C1, b
+    return np.vstack((C0, C1[:-1])), b
 
 
 def get_Pc_SMAC(C, b):
