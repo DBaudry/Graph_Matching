@@ -6,7 +6,7 @@ import solver as sl
 from discretize import discretize_one_to_one as dct1
 
 
-def random_xp(n_expe, n, m, noise_lvl):
+def random_xp(n_expe, n, m, noise_lvl, dist_attribute=np.random.uniform, dist_noise=np.random.uniform):
     C0, C1, b = gn.get_1t1_constraints(n)
     C = np.vstack((C0, C1[:-1]))  # Remove last row to make C full rank
     Pc = gn.get_Pc_SMAC(C, b)
@@ -15,10 +15,11 @@ def random_xp(n_expe, n, m, noise_lvl):
     for _ in tqdm(range(n_expe)):
 
         # Generate new graphs and get compatibility matrix
-        graph1 = gn.generate_random_graph(n, m)
-        graph2 = gn.get_perturbed_graph(graph1, noise_lvl)
+        graph1 = gn.generate_random_graph(n, m, dist_attribute)
+        graph2 = gn.get_perturbed_graph(graph1, noise_lvl, dist_noise)
         W = gn.get_compatibility_matrix(graph1, graph2, func=gn.exp_dist)
         BSN_W = bistochastic_normalization(W, n, n)
+        BSN_W = n*BSN_W
 
         # Compute xp
         true_P = get_true_permutation_matrix(graph2[-1], n)
