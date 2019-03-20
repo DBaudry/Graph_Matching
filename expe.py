@@ -50,3 +50,14 @@ def get_true_permutation_matrix(permut_list, n):
     for i, x in enumerate(permut_list):
         P[i, x] = 1
     return P.flatten()
+
+
+def xp_noise_map(noise_map, n_expe, n, m, dist_attribute=np.random.uniform, dist_noise=np.random.uniform):
+    results = {'SM': [], 'GA': [], 'SMAC': [], 'SMb': [], 'GAb': [], 'SMACb': []}
+    results_perfect_match = {'SM': [], 'GA': [], 'SMAC': [], 'SMb': [], 'GAb': [], 'SMACb': []}
+    for noise in tqdm(noise_map):
+        res = random_xp(n_expe, n, m, noise, dist_attribute, dist_noise)
+        for x in results.keys():
+            results[x].append(1-res[0][x])
+            results_perfect_match[x].append(1-res[1][x])
+    return results, results_perfect_match
