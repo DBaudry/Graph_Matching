@@ -10,8 +10,9 @@ def random_xp(n_expe, n, m, noise_lvl):
     C0, C1, b = gn.get_1t1_constraints(n)
     C = np.vstack((C0, C1[:-1]))  # Remove last row to make C full rank
     Pc = gn.get_Pc_SMAC(C, b)
+    score_perfect_match = {'SM': 0, 'GA': 0, 'SMAC': 0, 'SMb': 0, 'GAb': 0, 'SMACb': 0}
     score = {'SM': 0, 'GA': 0, 'SMAC': 0, 'SMb': 0, 'GAb': 0, 'SMACb': 0}
-    for k in tqdm(range(n_expe)):
+    for _ in tqdm(range(n_expe)):
 
         # Generate new graphs and get compatibility matrix
         graph1 = gn.generate_random_graph(n, m)
@@ -24,23 +25,23 @@ def random_xp(n_expe, n, m, noise_lvl):
         SM = sl.SM(W)
         GA = sl.GA_matrix(W, n, x0=gn.random_permutation_matrix(n))
         SMAC = sl.SMAC(W, Pc)
-        SM, GA, SMAC = dct1(W, n, SM), dct1(W, n, GA), dct1(W, n, SMAC)
+        SM, GA, SMAC = dct1(W, n, SM), dct1(W, n, GA, is_GA=True), dct1(W, n, SMAC)
 
         SM_b = sl.SM(BSN_W)
         GA_b = sl.GA_matrix(BSN_W, n, x0=gn.random_permutation_matrix(n))
         SMAC_b = sl.SMAC(BSN_W, Pc)
-        SM_b, GA_b, SMAC_b = dct1(BSN_W, n, SM_b), dct1(BSN_W, n, GA_b), dct1(BSN_W, n, SMAC_b)
+        SM_b, GA_b, SMAC_b = dct1(BSN_W, n, SM_b), dct1(BSN_W, n, GA_b, is_GA=True), dct1(BSN_W, n, SMAC_b)
 
+        names = ['SM', 'GA', 'SMAC', 'SMb', 'GAb', 'SMACb']
+        res = [SM, GA, SMAC, SM_b, GA_b, SMAC_b]
         # update score
-        score['SM'] += (np.abs((SM-true_P)).sum() == 0)/n_expe
-        score['GA'] += (np.abs((GA-true_P)).sum() == 0)/n_expe
-        score['SMAC'] += (np.abs((SMAC-true_P)).sum() == 0)/n_expe
-        score['SMb'] += (np.abs((SM_b-true_P)).sum() == 0)/n_expe
-        score['GAb'] += (np.abs((GA_b-true_P)).sum() == 0)/n_expe
-        score['SMACb'] += (np.abs((SMAC_b-true_P)).sum() == 0)/n_expe
+        for i, name in enumerate(names):
+            score_perfect_match[name] += (np.abs((res[i]-true_P)).sum() == 0)/n_expe
+            score[name] += (res[i]*true_P).sum()/n/n_expe
     for x in score.keys():
-        score[x] = round(score[x], 2)
-    return score
+        score[x] = round(score[x], 3)
+        score_perfect_match[x] = round(score_perfect_match[x], 3)
+    return score, score_perfect_match
 
 
 def get_true_permutation_matrix(permut_list, n):
