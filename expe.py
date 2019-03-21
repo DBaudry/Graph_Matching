@@ -6,17 +6,22 @@ import solver as sl
 from discretize import discretize_one_to_one as dct1
 
 
-def random_xp(n_expe, n, m, noise_lvl, dist_attribute=np.random.uniform, dist_noise=np.random.uniform):
-    C0, C1, b = gn.get_1t1_constraints(n)
-    C = np.vstack((C0, C1[:-1]))  # Remove last row to make C full rank
+def random_xp(n_expe, n, m, noise_lvl, dists=('u', 'u')):
+    dist_attribute = np.random.uniform if dists[0] == 'u' else np.random.normal
+    dist_noise = np.random.uniform if dists[1] == 'u' else np.random.normal
+    param_att = (-1, 1) if dists[0] == 'u' else (0, 1)
+    param_noise = (-noise_lvl/2, noise_lvl/2) if dists[1] == 'u' else (0, noise_lvl)
+    C, b = gn.get_1t1_constraints(n)
     Pc = gn.get_Pc_SMAC(C, b)
     score_perfect_match = {'SM': 0, 'GA': 0, 'SMAC': 0, 'SMb': 0, 'GAb': 0, 'SMACb': 0}
     score = {'SM': 0, 'GA': 0, 'SMAC': 0, 'SMb': 0, 'GAb': 0, 'SMACb': 0}
+    avg_regret = {'SM': 0, 'GA': 0, 'SMAC': 0, 'SMb': 0, 'GAb': 0, 'SMACb': 0}
+
     for _ in tqdm(range(n_expe)):
 
         # Generate new graphs and get compatibility matrix
-        graph1 = gn.generate_random_graph(n, m, dist_attribute)
-        graph2 = gn.get_perturbed_graph(graph1, noise_lvl, dist_noise)
+        graph1 = gn.generate_random_graph(n, m, param_att, dist_attribute)
+        graph2 = gn.get_perturbed_graph(graph1, param_noise, dist_noise)
         W = gn.get_compatibility_matrix(graph1, graph2, func=gn.exp_dist)
         BSN_W = bistochastic_normalization(W, n, n)
         BSN_W = n*BSN_W
@@ -39,10 +44,12 @@ def random_xp(n_expe, n, m, noise_lvl, dist_attribute=np.random.uniform, dist_no
         for i, name in enumerate(names):
             score_perfect_match[name] += (np.abs((res[i]-true_P)).sum() == 0)/n_expe
             score[name] += (res[i]*true_P).sum()/n/n_expe
+            true_obj = np.dot(true_P, np.dot(W, true_P))
+            avg_regret[name] += (true_obj - np.dot(res[i], np.dot(W, res[i])))/n_expe
     for x in score.keys():
         score[x] = round(score[x], 3)
         score_perfect_match[x] = round(score_perfect_match[x], 3)
-    return score, score_perfect_match
+    return score, score_perfect_match, avg_regret
 
 
 def get_true_permutation_matrix(permut_list, n):
